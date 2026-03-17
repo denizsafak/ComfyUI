@@ -247,7 +247,13 @@ def get_outputs_summary(outputs: dict) -> tuple[int, Optional[dict]]:
                         # Not a 3D file string — check for text preview
                         if media_type == 'text':
                             count += 1
-                            if preview_output is None:
+                            # Only create/store a text fallback when we don't yet
+                            # have a primary preview or a non-text fallback.
+                            if (
+                                preview_output is None
+                                and fallback_preview is None
+                                and text_fallback_preview is None
+                            ):
                                 if isinstance(item, tuple):
                                     text_value = item[0] if item else ''
                                 else:
@@ -258,8 +264,7 @@ def get_outputs_summary(outputs: dict) -> tuple[int, Optional[dict]]:
                                     'nodeId': node_id,
                                     'mediaType': media_type
                                 }
-                                if text_fallback_preview is None:
-                                    text_fallback_preview = enriched
+                                text_fallback_preview = enriched
                         continue
                     # normalize_output_item returned a dict (e.g. 3D file)
                     item = normalized
@@ -282,7 +287,7 @@ def get_outputs_summary(outputs: dict) -> tuple[int, Optional[dict]]:
                         # Prefer non-text media (images/video/audio/3d) over text fallback.
                         if fallback_preview is None:
                             fallback_preview = enriched
-                    elif text_fallback_preview is None:
+                    elif fallback_preview is None and text_fallback_preview is None:
                         text_fallback_preview = enriched
 
     return count, preview_output or fallback_preview or text_fallback_preview
