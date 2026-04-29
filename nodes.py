@@ -32,7 +32,7 @@ import comfy.controlnet
 from comfy.comfy_types import IO, ComfyNodeABC, InputTypeDict, FileLocator
 from comfy_api.internal import register_versions, ComfyAPIWithVersion
 from comfy_api.version_list import supported_versions
-from comfy_api.latest import io, ComfyExtension
+from comfy_api.latest import io, ComfyExtension, InputImpl
 
 import comfy.clip_vision
 
@@ -1716,6 +1716,10 @@ class LoadImage:
     def load_image(self, image):
         image_path = folder_paths.get_annotated_filepath(image)
 
+        components = InputImpl.VideoFromFile(image_path).get_components()
+        if components.images.shape[0] > 0:
+            return (components.images, 1.0 - components.alpha[..., -1] if components.alpha is not None else torch.zeros((components.images.shape[0], 64, 64), dtype=torch.float32, device="cpu"))
+
         img = node_helpers.pillow(Image.open, image_path)
 
         output_images = []
@@ -2457,7 +2461,9 @@ async def init_builtin_extra_nodes():
         "nodes_number_convert.py",
         "nodes_painter.py",
         "nodes_curve.py",
-        "nodes_rtdetr.py"
+        "nodes_rtdetr.py",
+        "nodes_frame_interpolation.py",
+        "nodes_sam3.py"
     ]
 
     import_failed = []
